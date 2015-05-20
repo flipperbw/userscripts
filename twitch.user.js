@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name          Twtich Hotkeys
+// @name          Twitch Hotkeys
 // @author		  Flipperbw
 // @version       1.0
 // @include       /^https?://(www|beta)\.twitch\.tv\/[a-zA-Z0-9]\w{3,24}\/[a-z]/\d+/
