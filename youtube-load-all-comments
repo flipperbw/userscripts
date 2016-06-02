@@ -1,0 +1,76 @@
+// ==UserScript==
+// @name          Youtube Load All Comments
+// @author		  Flipperbw
+// @version       1.1
+// @include       /http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?[\w\?=]*)?/
+// @require        http://code.jquery.com/jquery-latest.min.js
+// ==/UserScript==
+
+console.log('All comments loaded');
+
+var com_target = document.querySelector('#watch-discussion');
+var load_all_clicked = false;
+var discon = false;
+var all_com_div = $('<div id="ext_all_comments" style="float: right; cursor: pointer">Show All Comments</div>');
+all_com_div.click(function() {
+    console.log('clicking');
+    load_all_clicked = true;
+    com_observer.disconnect();
+    all_com_div.html('<span class="yt-spinner"><span class="yt-spinner-img yt-sprite" title="Loading icon"></span>Loading...</span>');
+    com_observer.observe(com_target, com_config);
+    click_button();
+});
+
+var com_observer = new MutationObserver(function(mutations) {
+    var button_found = false;
+    mutations.forEach(function(mutation) {
+        var added_nodes = mutation.addedNodes;
+        if (added_nodes && added_nodes.length && (added_nodes.length > 0)) {
+            for (i = 0; i < added_nodes.length; ++i) {
+                var n = added_nodes[i];
+                if (n.id == 'comment-section-renderer') {
+                    console.log('Adding all comments link...');
+                    var comments_text = $('.comment-section-header-renderer');
+                    if (comments_text) {
+                        com_observer.disconnect();
+                        comments_text.append(all_com_div);
+                        console.log('Added link.');
+                        com_observer.observe(com_target, com_config);
+                    }
+                    button_found = true;
+                    break;
+                }
+                else if (n.type == 'button' && (n.className.indexOf('comment-section-renderer-paginator') > -1) && load_all_clicked) {
+                    button_found = true;
+                    click_button();
+                    break;
+                }
+            }
+        }
+    });
+
+    if (!button_found && load_all_clicked) {
+        com_observer.disconnect();
+        console.log('Expanding all comments');
+        var expanders = $('button.comment-replies-renderer-paginator');
+        $.each(expanders, function(k,v) {
+            v.click();
+        });
+        console.log('Finished loading comments.');
+        all_com_div.html('Show All Comments');
+    }
+});
+
+function click_button() {
+    var target = document.querySelector('button.comment-section-renderer-paginator');
+    if (target) {
+        target.click();
+    }
+    else {
+        all_com_div.html('Show All Comments');
+    }
+}
+
+var com_config = { attributes: false, childList: true, characterData: false, subtree: true };
+
+com_observer.observe(com_target, com_config);
