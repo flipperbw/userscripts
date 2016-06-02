@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Youtube Load All Comments
 // @author		  Flipperbw
-// @version       1.1
+// @version       1.1.1
 // @include       /http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?[\w\?=]*)?/
 // @require        http://code.jquery.com/jquery-latest.min.js
 // ==/UserScript==
@@ -11,14 +11,47 @@ console.log('All comments loaded');
 var com_target = document.querySelector('#watch-discussion');
 var load_all_clicked = false;
 var discon = false;
-var all_com_div = $('<div id="ext_all_comments" style="float: right; cursor: pointer">Show All Comments</div>');
-all_com_div.click(function() {
+
+var com_div = '<div id="load_all_comments" style="float: right; cursor: pointer"></div>';
+var com_text = 'Show All';
+var loading_text = '<span class="yt-spinner"><span class="yt-spinner-img yt-sprite" title="Loading icon"></span>Loading...</span>';
+var all_com_div = $(com_div);
+all_com_div.html(com_text);
+
+var sep = $('<div style="float: right">&nbsp;|&nbsp;</div>');
+
+var expand_div = '<div id="exp_all_comments" style="float: right; cursor: pointer"></div>';
+var expand_text = 'Expand';
+var expand_loading_text = '<span class="yt-spinner"><span class="yt-spinner-img yt-sprite" title="Loading icon"></span>Expanding...</span>';
+var expand_com_div = $(expand_div);
+expand_com_div.html(expand_text);
+
+var clickon = function () {
+    all_com_div.unbind("click");
     console.log('clicking');
     load_all_clicked = true;
     com_observer.disconnect();
-    all_com_div.html('<span class="yt-spinner"><span class="yt-spinner-img yt-sprite" title="Loading icon"></span>Loading...</span>');
+    all_com_div.html(loading_text);
+    all_com_div.click(clickoff);
     com_observer.observe(com_target, com_config);
     click_button();
+};
+
+var clickoff = function() {
+    all_com_div.unbind("click");
+    console.log('stopping clicking');
+    com_observer.disconnect();
+    all_com_div.html(com_text);
+    all_com_div.click(clickon);
+};
+
+all_com_div.click(clickon);
+
+expand_com_div.click(function() {
+    com_observer.disconnect();
+    expand_com_div.html(expand_loading_text);
+    expand_all();
+    expand_com_div.html(expand_text);
 });
 
 var com_observer = new MutationObserver(function(mutations) {
@@ -34,7 +67,9 @@ var com_observer = new MutationObserver(function(mutations) {
                     if (comments_text) {
                         com_observer.disconnect();
                         comments_text.append(all_com_div);
-                        console.log('Added link.');
+                        comments_text.append(sep);
+                        comments_text.append(expand_com_div);
+                        console.log('Added links.');
                         com_observer.observe(com_target, com_config);
                     }
                     button_found = true;
@@ -51,15 +86,20 @@ var com_observer = new MutationObserver(function(mutations) {
 
     if (!button_found && load_all_clicked) {
         com_observer.disconnect();
-        console.log('Expanding all comments');
-        var expanders = $('button.comment-replies-renderer-paginator');
-        $.each(expanders, function(k,v) {
-            v.click();
-        });
+        expand_all();
         console.log('Finished loading comments.');
-        all_com_div.html('Show All Comments');
+        all_com_div.html(com_text);
     }
 });
+
+function expand_all() {
+    console.log('Expanding all comments');
+    var expanders = $('button.comment-replies-renderer-paginator');
+    $.each(expanders, function(k,v) {
+        v.click();
+    });
+    console.log('Finished expanding.');
+}
 
 function click_button() {
     var target = document.querySelector('button.comment-section-renderer-paginator');
@@ -67,7 +107,7 @@ function click_button() {
         target.click();
     }
     else {
-        all_com_div.html('Show All Comments');
+        all_com_div.html(com_text);
     }
 }
 
